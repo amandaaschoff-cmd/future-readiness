@@ -1,9 +1,6 @@
 "use client";
+
 import React, { useMemo, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Download, Info } from "lucide-react";
 import {
   RadarChart,
   PolarGrid,
@@ -14,247 +11,334 @@ import {
   Tooltip,
 } from "recharts";
 
-const DOMAINS = [
-  "Learning and Development Strategy",
-  "Operating Models and Governance",
-  "Data, Analytics and Insights",
-  "Learning Technology and AI Adoption",
-  "Learning Experience Design",
-  "Culture and Talent",
-  "Scalability and Reach",
-];
+/**
+ * Self‑contained version (no external UI deps)
+ * - Lightweight local components
+ * - Docebo-style tokens
+ * - UPDATED: 4 levels → Foundational, Developing, Advanced, Transformative
+ */
 
-const QUESTIONS = {
-  "Learning and Development Strategy": [
-    "Aligned Investment: more than 75% of learning spend is mapped to business OKRs or KPIs",
-    "Goal Alignment: L&D team goals are reviewed in the same cadence and forum as other enterprise priorities",
-    "Stakeholder Sentiment: executives regard L&D as critical infrastructure, not a discretionary support service",
-  ],
-  "Operating Models and Governance": [
-    "Risk Management: policies and workflows for compliance, risk, and privacy are documented and audited at least annually",
-    "Federated Access: business units can launch or curate learning autonomously within guardrails supplied by the central L&D team",
-    "Strategic Investment: the L&D budget is allocated through a portfolio management process that weighs ROI and strategic fit",
-  ],
-  "Data, Analytics and Insights": [
-    "Leading Indicators: L&D tracks leading indicators such as time to proficiency or capability gaps",
-    "Data Integration: a learning record store consolidates data from multiple systems in real time",
-    "Predictive Analytics: analytics drive proactive recommendations without human intervention",
-  ],
-  "Learning Technology and AI Adoption": [
-    "Workflow Automation: less than 10% of our learning workflows rely on manual, spreadsheet driven processes",
-    "AI Pilots: at least one live AI pilot is informing future rollouts",
-    "AI Support: most reactive learner needs are met by AI agents or coaches",
-  ],
-  "Learning Experience Design": [
-    "Cross Functional Design: instructional specialists partner with data analysts, SMEs, and product managers",
-    "Evidence Based Iteration: programs are routinely A/B tested and iterated based on learner behavior analytics",
-    "AI Personalization: learners receive personalized, just in time pathways curated by AI based on performance data",
-  ],
-  "Culture and Talent": [
-    "Leadership Development: people leaders actively coach and reinforce learning on the job",
-    "Capability Development: a formal Capability Academy connects technical and behavioral skills to talent pipelines",
-    "Scalable Skills: a unified skills ontology and a talent marketplace are in operation",
-  ],
-  "Scalability and Reach": [
-    "Voluntary Engagement: more than 70% of the workforce accesses learning each month without mandated assignments",
-    "Federated Ecosystem: content, experiences, and data flow seamlessly across business units and geographies",
-    "Strategic Focus: the function dedicates more time to architecture and evolution than to day to day delivery",
-  ],
+// ---------------- THEME ----------------
+const THEME = {
+  brand: "#2B6DEF", // swap for Docebo token
+  brandMuted: "#1E4CB6",
+  accent: "#00C2A8",
+  bg: "#F7F9FC",
+  card: "#FFFFFF",
+  ink: "#0F172A",
+  muted: "#5B6472",
 };
 
-const OPTIONS = [1, 2, 3, 4, 5];
-const LEVEL_LABELS = [
-  "No structure / ad-hoc",
-  "Basic foundation in place",
-  "Partially standardized",
-  "Well-structured & measured",
-  "Optimized / enterprise-aligned",
-];
+// ------------- LIGHT UI PRIMITIVES -------------
+function clsx(...xs: any[]) { return xs.filter(Boolean).join(" "); }
 
-function getStage(avg) {
-  if (avg >= 4.5) return "Transformative";
-  if (avg >= 3.5) return "Strategic";
-  if (avg >= 2.5) return "Impacting";
-  if (avg >= 1.5) return "Proactive";
-  return "Reactive";
+function Card({ children, className, style }: any) {
+  return (
+    <div className={clsx("rounded-2xl border border-[#E5E7EB] shadow-sm", className)} style={{ background: THEME.card, ...style }}>
+      {children}
+    </div>
+  );
+}
+function CardContent({ children, className }: any) {
+  return <div className={clsx("p-4 sm:p-6", className)}>{children}</div>;
+}
+function Button({ children, variant = "solid", disabled, className, ...rest }: any) {
+  const base = "inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-medium transition focus:outline-none";
+  const solid = { background: THEME.brand, color: "#fff", border: `1px solid ${THEME.brand}` } as const;
+  const outline = { background: "transparent", color: THEME.brand, border: `1px solid ${THEME.brand}` } as const;
+  const style = variant === "outline" ? outline : solid;
+  const disabledStyle = disabled ? { opacity: 0.5, cursor: "not-allowed" } : {};
+  return (
+    <button {...rest} disabled={disabled} className={clsx(base, className)} style={{ ...style, ...disabledStyle }}>
+      {children}
+    </button>
+  );
+}
+function Progress({ value = 0, className }: any) {
+  return (
+    <div className={clsx("w-full h-2 rounded-full bg-[#E5E7EB]", className)}>
+      <div style={{ width: `${Math.max(0, Math.min(100, value))}%`, background: THEME.brand }} className="h-2 rounded-full" />
+    </div>
+  );
 }
 
-export default function FutureReadinessAssessment() {
-  const [answers, setAnswers] = useState({});
+// Tiny inline icons
+const Icon = {
+  Info: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" stroke="#94A3B8" strokeWidth="2" />
+      <path d="M12 8.5v.01M11 11h2v6h-2z" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  ),
+  Check: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20 6L9 17l-5-5" stroke={THEME.brand} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  Download: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  ),
+  Sparkles: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3l2 4 4 2-4 2-2 4-2-4-4-2 4-2 2-4z" stroke={THEME.brand} strokeWidth="1.5" />
+    </svg>
+  ),
+  External: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M14 3h7v7M21 3l-9 9" stroke="#64748B" strokeWidth="2" />
+      <path d="M5 12v7h7" stroke="#64748B" strokeWidth="2" />
+    </svg>
+  ),
+};
+
+// ---------------- DATA ----------------
+const DIMENSIONS = [
+  "Learning strategy",
+  "Leadership alignment",
+  "SME collaboration",
+  "Learner engagement",
+  "Learning needs identification",
+  "Training processes",
+  "Learning metrics",
+];
+
+// UPDATED: 4 levels
+const LEVELS = [
+  { label: "Foundational", value: 1 },
+  { label: "Developing", value: 2 },
+  { label: "Advanced", value: 3 },
+  { label: "Transformative", value: 4 },
+];
+
+const STAGE_RULES = [
+  { min: 3.5, max: 4.01, name: "Transformative" },
+  { min: 2.5, max: 3.5, name: "Advanced" },
+  { min: 1.5, max: 2.5, name: "Developing" },
+  { min: 1.0, max: 1.5, name: "Foundational" },
+];
+
+const levelHelp: Record<number, string> = {
+  1: "Initial practices; ad‑hoc and inconsistent.",
+  2: "Basic processes defined; ownership emerging.",
+  3: "Consistent execution with measurable outcomes and cross‑team alignment.",
+  4: "Continuous improvement, automation, and enterprise‑wide impact.",
+};
+
+// ---------------- UTILS ----------------
+function stageFromScore(avg: number) {
+  if (!avg || Number.isNaN(avg)) return "—";
+  const rule = STAGE_RULES.find((r) => avg >= r.min && avg < r.max);
+  return rule ? rule.name : "—";
+}
+
+// ---------------- COMPONENT ----------------
+export default function MaturityAssessment() {
+  const [answers, setAnswers] = useState<Record<number, number>>({}); // key: dimension index, value: 1..4
   const [showGate, setShowGate] = useState(false);
 
   const { avg, filledCount, data } = useMemo(() => {
-    const allScores = Object.values(answers);
-    const sum = allScores.reduce((a, b) => a + b, 0);
-    const avg = allScores.length ? sum / allScores.length : 0;
-
-    const data = DOMAINS.map((domain, i) => {
-      const questions = QUESTIONS[domain];
-      const scores = questions.map((_, j) => answers[`${i}-${j}`]).filter(Boolean);
-      const avgDomain = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-      return { subject: domain, A: avgDomain, fullMark: 5 };
-    });
-
-    return { avg, filledCount: allScores.length, data };
+    const values = DIMENSIONS.map((_, i) => answers[i]).filter(Boolean) as number[];
+    const sum = values.reduce((a, b) => a + b, 0);
+    const avg = values.length ? sum / values.length : 0;
+    const data = DIMENSIONS.map((name, i) => ({ subject: name, A: answers[i] || 0, fullMark: 4 }));
+    return { avg, filledCount: values.length, data };
   }, [answers]);
 
-  const progress = Math.round((filledCount / (DOMAINS.length * 3)) * 100);
-  const stage = getStage(avg);
+  const progress = Math.round((filledCount / DIMENSIONS.length) * 100);
+  const stage = stageFromScore(avg);
 
-  const reset = () => {
-    setAnswers({});
-    setShowGate(false);
-  };
+  const reset = () => { setAnswers({}); setShowGate(false); };
+
+  const canShowResultsCtas = filledCount >= 5; // encourage completion before CTAs
+  const qualifiesForTrial = avg >= 3.5 && filledCount === DIMENSIONS.length; // Transformative threshold
 
   return (
-    <div
-      className="min-h-screen text-white p-6 sm:p-10"
-      style={{
-        background: "linear-gradient(180deg, #4b00e0 0%, #d1007a 50%, #f9c74f 100%)",
-      }}
-    >
-      <div className="mx-auto max-w-6xl">
-        {/* Header with Logo */}
-        <header className="mb-8 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAr0AAACpCAYAAAAm/IV8AAAABGdBTUEAALGPC/xhBQAACklpQ0NQc1JHUkNJRyAAAHicfZJ3U1TnGcc/6Y2k3RIEQihBQhUpLShQApJCpS6doUed2a8dY6N6tT2btV1K3u7rZ8+h1H3Z0S9m+9KcO2nGdL2WfZkWNNuK3wZKhb+gQFZxZKQkQ5SAgNHDgG0cCQ7mS7L1v5kG3m6mZ5v6b9h9bJrE0z7dC7Z4Sxo1HGnCq4kTn7n4zv0w3n5+eTXO1vQ/8BzP8cR4+RjQ2u0HqA3b0YgYwPZ9eJm1yI0X5kQF3hXG7h8j2M5h5mMZkzq7n6T3bDTd7qQJ0d5wYJ2p6m1C5s6z6qDqj6w4k0U8nDaxj0bG2rGv9d9+7N0f6l2oU0gB6CqA9o1A9I1gH0H2qB6M2gA0JqH5qgJ0HcNHiHhQJmB5iJqC1gXxHEDQ4QxDqJ8f8V9V3H3Tt1t7i6Tj9f8z9K2oO0gkA8wEAAI4iSURBVHja7Z15cBRlXwaf75x7s5k3M3u1rY3KMq7gQJmM0IYq6IuS6qJcA7wQq8QZ1fQ2K1Yv1CEN1qkqCi5Ssg0qE3A6JrB2ZtP4hB7HnDq7YxGq6pW3fC9rHc7E0b6Vf3z2e+9+2f3m0ZpJp9u6e6eH3+Y8v8kzv+0bG6wC4CwAAACAAAAgAABYkqgAAAgAAAIgAAEAgAAAiAAAEAgAAAiAAAQCAAACIABABAAAgAABYkqgAAAAAAACc7YJ7GQ6s5bC7fF9vXkH0v5m3P1C3c4v2+z1dYQqvV9YJZ+nJ6H2WwYzN1eAq2vZyqgVJ6p0GvotQ1c9c6QG3GJ6Jm3W1JrQXQ3nqfCwq6s6gH0m0e6m2c8Wq6e1mY1W4i02dYbQqv0v2bqVwq1V+YVxQw0r1Bf6d4Tj1Z9bX7m5nY6b8p2m4mQ6kCk2kQm2k4m2m0mY0l8l8Y0Y0f8a0d8a0Y0f8Y0a8Y0Y0j8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0a8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0b8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0Z8Y0xc7l9zI/Ec1v03dAo019xLT7dLMDer/nKD39G1O/vgvO+9gc9aEeJZzvPHL5fZ2s5vtF+H/xQrRGrpsRrwAAAABJRU5ErkJggg==" alt="Docebo" className="h-6 sm:h-8" />
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
-              Future-Readiness Assessment
-            </h1>
+    <div style={{ background: THEME.bg, color: THEME.ink, minHeight: "100vh", padding: "2.5rem" }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+        {/* Header */}
+        <header style={{ display: "flex", justifyContent: "space-between", gap: 16, marginBottom: 32 }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0 }}>Docebo Learning Experience Maturity Assessment</h1>
+            <p style={{ color: "#64748B", marginTop: 6 }}>Select one level (1–4) for each dimension. Results update in real time.</p>
           </div>
-          <Button variant="secondary" onClick={reset} className="bg-white/20 text-white hover:bg-white/30">
-            Reset
-          </Button>
+          <Button variant="outline" onClick={reset} aria-label="Reset assessment">Reset</Button>
         </header>
 
         {/* Progress */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-white">Completion</span>
-            <span className="text-sm text-white/90">{filledCount}/{DOMAINS.length * 3}</span>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 14, color: "#334155", fontWeight: 500 }}>Completion</span>
+            <span style={{ fontSize: 14, color: "#475569" }}>{filledCount}/{DIMENSIONS.length}</span>
           </div>
-          <Progress value={progress} className="bg-white/20 [&>div]:bg-white" />
+          <Progress value={progress} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Questions */}
-          <section className="space-y-6">
-            {DOMAINS.map((domain, i) => (
-              <Card key={domain} className="shadow-sm rounded-2xl bg-white/90 text-slate-900">
-                <CardContent className="p-5 sm:p-6 space-y-4">
-                  <div>
-                    <h3 className="text-base sm:text-lg font-semibold">{domain}</h3>
-                    <p className="text-xs sm:text-sm text-slate-600 mt-1 flex items-center gap-2">
-                      <Info className="h-4 w-4" /> Rate each statement 1–5 based on your maturity level.
-                    </p>
+        {/* Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+            {DIMENSIONS.map((dim, i) => (
+              <Card key={dim}>
+                <CardContent>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+                    <div>
+                      <h3 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>{dim}</h3>
+                      <p style={{ fontSize: 13, color: "#64748B", marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
+                        <Icon.Info /> Choose the level that best describes your current state.
+                      </p>
+                    </div>
+                    {answers[i] && (
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 12, color: "#64748B" }}>Selected</div>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>
+                          {LEVELS.find((l) => l.value === answers[i])?.label} ({answers[i]}/4)
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {QUESTIONS[domain].map((q, j) => (
-                    <div key={`${i}-${j}`} className="border rounded-xl p-4 bg-white">
-                      <p className="text-sm font-medium mb-2">{q}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {OPTIONS.map((opt) => {
-                          const active = answers[`${i}-${j}`] === opt;
-                          return (
-                            <button
-                              key={opt}
-                              onClick={() =>
-                                setAnswers((prev) => ({ ...prev, [`${i}-${j}`]: opt }))
-                              }
-                              className={[
-                                "px-3 py-2 rounded-lg border text-sm transition",
-                                active
-                                  ? "border-yellow-400 ring-2 ring-yellow-300/70 bg-yellow-50"
-                                  : "border-slate-200 hover:border-slate-300",
-                              ].join(" ")}
-                            >
-                              {opt} – {LEVEL_LABELS[opt - 1]}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
+                  <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(4, minmax(0,1fr))", gap: 8 }}>
+                    {LEVELS.map((level) => {
+                      const active = answers[i] === level.value;
+                      return (
+                        <button
+                          key={level.value}
+                          onClick={() => setAnswers((prev) => ({ ...prev, [i]: level.value }))}
+                          style={{
+                            border: `1px solid ${active ? THEME.brand : "#E5E7EB"}`,
+                            borderRadius: 12,
+                            padding: 12,
+                            textAlign: "left",
+                            background: "#fff",
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                          }}
+                          aria-pressed={active}
+                          aria-label={`${dim} level ${level.label}`}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontWeight: 600, fontSize: 14 }}>{level.label}</span>
+                            {active && <Icon.Check />}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#64748B", marginTop: 4 }}>{levelHelp[level.value]}</div>
+                          <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 8 }}>{level.value} / 4</div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </CardContent>
               </Card>
             ))}
-          </section>
+          </div>
 
-          {/* Sticky Live Results */}
-          <aside className="space-y-4 lg:sticky lg:top-6 self-start">
-            <Card className="rounded-2xl shadow-md bg-white/90 text-slate-900">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start justify-between">
+          {/* Live Results */}
+          <div style={{ display: "grid", gap: 16 }}>
+            <Card>
+              <CardContent>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <div>
-                    <h2 className="text-lg sm:text-xl font-semibold">Your assessment results</h2>
-                    <p className="text-sm text-slate-600 mt-1">
-                      Results update as you answer. Complete all 21 questions for the full radar chart.
-                    </p>
+                    <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Your self‑assessment results</h2>
+                    <p style={{ color: "#64748B", fontSize: 14, marginTop: 6 }}>Updates as you select levels. Complete all {DIMENSIONS.length} for the full radar chart.</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs text-slate-500">Overall score</div>
-                    <div className="text-2xl font-bold text-pink-600">{avg ? avg.toFixed(2) : "—"}</div>
-                    <div className="text-xs text-slate-500">
-                      Stage: <span className="font-medium text-purple-700">{stage}</span>
-                    </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 12, color: "#64748B" }}>Overall score</div>
+                    <div style={{ fontSize: 24, fontWeight: 800 }}>{avg ? avg.toFixed(2) : "—"}</div>
+                    <div style={{ fontSize: 12, color: "#64748B" }}>Stage: <span style={{ fontWeight: 600 }}>{stage}</span></div>
                   </div>
                 </div>
 
-                <div className="mt-6 h-72 w-full">
+                <div style={{ height: 288, width: "100%", marginTop: 16 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-                      <PolarGrid stroke="#d1007a40" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 5]} tickCount={6} />
-                      <Tooltip formatter={(value) => `${value}/5`} />
-                      <Radar name="Score" dataKey="A" stroke="#d1007a" fill="#d1007a" fillOpacity={0.25} />
+                      <PolarGrid />
+                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
+                      <PolarRadiusAxis angle={30} domain={[0, 4]} tickCount={5} />
+                      <Tooltip formatter={(value) => `${value}/4`} />
+                      <Radar name="Score" dataKey="A" stroke={THEME.brand} fill={THEME.brand} fillOpacity={0.2} />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
 
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {data.map((d) => (
-                    <div key={d.subject} className="rounded-xl border border-slate-200 p-3 bg-white">
-                      <div className="text-xs text-slate-500">{d.subject}</div>
-                      <div className="text-sm font-medium text-pink-700">{d.A ? d.A.toFixed(2) : "—"}/5</div>
+                <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: 12 }}>
+                  {DIMENSIONS.map((dim, i) => (
+                    <div key={dim} style={{ border: "1px solid #E5E7EB", borderRadius: 12, padding: 12, background: "#fff" }}>
+                      <div style={{ fontSize: 12, color: "#64748B" }}>{dim}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{answers[i] ? `${LEVELS.find((l) => l.value === answers[i])?.label} (${answers[i]}/4)` : "—"}</div>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <Button onClick={() => setShowGate(true)} className="w-full sm:w-auto bg-gradient-to-r from-pink-600 to-yellow-400 text-white border-0 hover:opacity-90">
-                    <Download className="mr-2 h-4 w-4" /> Get your tailored playbook
+                {/* Contextual CTAs */}
+                <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: 12 }}>
+                  <Button onClick={() => setShowGate(true)} disabled={!canShowResultsCtas}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <Icon.Download /> Get your tailored maturity playbook
+                    </span>
                   </Button>
-                  <div className="text-xs text-slate-600">Receive a custom summary based on your results.</div>
+
+                  <Button variant="outline" disabled={!qualifiesForTrial}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <Icon.Sparkles /> Request enterprise trial
+                    </span>
+                  </Button>
                 </div>
+
+                {!canShowResultsCtas && (
+                  <p style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>
+                    Answer at least <strong>5</strong> dimensions to unlock tailored recommendations.
+                  </p>
+                )}
+                {canShowResultsCtas && !qualifiesForTrial && (
+                  <p style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>
+                    Reach <strong>Transformative (≥3.5)</strong> across all dimensions to qualify for a trial request.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
+            {/* Gate (lead form mock) */}
             {showGate && (
-              <Card className="rounded-2xl shadow-sm border-yellow-300 bg-white/95">
-                <CardContent className="p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-pink-700">Request your tailored playbook</h3>
-                  <p className="text-sm text-slate-600 mt-1">Replace with your marketing form integration.</p>
-                  <form className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input className="rounded-xl border border-slate-300 px-3 py-2" placeholder="First name" />
-                    <input className="rounded-xl border border-slate-300 px-3 py-2" placeholder="Last name" />
-                    <input className="rounded-xl border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Work email" />
-                    <input className="rounded-xl border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Company" />
-                    <textarea className="rounded-xl border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Any specific areas to improve?" />
-                    <Button type="button" className="sm:col-span-2 bg-gradient-to-r from-pink-600 to-yellow-400 text-white hover:opacity-90">
-                      Send my tailored playbook
-                    </Button>
+              <Card>
+                <CardContent>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>We’ll send your tailored guide</h3>
+                  <p style={{ fontSize: 14, color: "#64748B", marginTop: 6 }}>
+                    Replace this mock with your HubSpot/Marketo embed. We’ll include next steps to <strong>book a demo</strong> and, if eligible, <strong>request a trial</strong>.
+                  </p>
+
+                  <form style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} onSubmit={(e) => e.preventDefault()}>
+                    <input style={inputStyle()} placeholder="First name" aria-label="First name" />
+                    <input style={inputStyle()} placeholder="Last name" aria-label="Last name" />
+                    <input style={inputStyle({ gridColumn: "1 / -1" })} placeholder="Work email" aria-label="Work email" />
+                    <input style={inputStyle({ gridColumn: "1 / -1" })} placeholder="Company" aria-label="Company" />
+                    <textarea style={inputStyle({ gridColumn: "1 / -1" })} placeholder="Anything specific you want to improve?" aria-label="Notes" />
+                    <Button type="submit" style={{ gridColumn: "1 / -1" }}>Send my tailored guide</Button>
                   </form>
+
+                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#64748B" }}>
+                    <Icon.External />
+                    <span>Security & privacy: enterprise‑grade. Link to ISO/SOC pages can go here.</span>
+                  </div>
                 </CardContent>
               </Card>
             )}
-          </aside>
+          </div>
         </div>
 
-        <div className="mt-10 text-xs text-white/80 text-center">
-          Styled with Docebo’s new brand gradient and accent colors. Layout and functionality unchanged.
-        </div>
+        {/* Footer note */}
+        <p style={{ marginTop: 24, fontSize: 12, color: "#64748B" }}>
+          Real‑time feedback with accessible controls. 4‑level scale (Foundational → Transformative). No external UI library. Chart via Recharts.
+        </p>
       </div>
     </div>
   );
+}
+
+function inputStyle(extra: any = {}) {
+  return {
+    border: "1px solid #CBD5E1",
+    borderRadius: 12,
+    padding: "10px 12px",
+    background: "#fff",
+    ...extra,
+  };
 }
