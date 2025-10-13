@@ -1,4 +1,4 @@
-# Future-Readiness Assessment
+# Future-Readiness Assessment (clean)
 
 Run locally:
 
@@ -7,4 +7,4 @@ npm i
 npm run dev
 ```
 
-Deploy on Vercel by importing the repo.
+Deploy to Vercel by importing the repo.

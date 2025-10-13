@@ -1,9 +1,10 @@
+\
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Download, Info } from "lucide-react";
+import { Download } from "lucide-react";
 import {
   RadarChart,
   PolarGrid,
@@ -272,7 +273,6 @@ const QUESTIONS = {
   ],
 };
 
-const OPTIONS = [1, 2, 3, 4, 5];
 const LEVEL_LABELS = [
   "No structure / ad-hoc",
   "Basic foundation in place",
@@ -500,20 +500,20 @@ export default function FutureReadinessAssessment() {
     );
     for (const d of DOMAINS) {
       console.assert(
-        Array.isArray(QUESTIONS[d]) and QUESTIONS[d].length === 3,
+        Array.isArray(QUESTIONS[d]) && QUESTIONS[d].length === 3,
         `[Schema] Domain "${d}" does not have exactly 3 questions.`
       );
     }
   }, []);
 
   const { avg, filledCount, data } = useMemo(() => {
-    const allScores = Object.values(answers);
+    const allScores = Object.values(answers) as number[];
     const sum = allScores.reduce((a, b) => a + b, 0);
     const avg = allScores.length ? sum / allScores.length : 0;
 
     const data = DOMAINS.map((domain, i) => {
-      const questions = QUESTIONS[domain];
-      const scores = questions.map((_, j) => answers[`${i}-${j}`]).filter(Boolean);
+      const questions = (QUESTIONS as any)[domain] as any[];
+      const scores = questions.map((_, j) => (answers as any)[`${i}-${j}`]).filter(Boolean) as number[];
       const avgDomain = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
       return { subject: domain, A: avgDomain, fullMark: 5 };
     });
@@ -521,12 +521,16 @@ export default function FutureReadinessAssessment() {
     return { avg, filledCount: allScores.length, data };
   }, [answers]);
 
-  const progress = Math.round((filledCount / (DOMAINS.length * 3)) * 100);
-  const { stage, signal } = getStageInfo(avg);
+  const totalQuestions = DOMAINS.length * 3;
+  const progress = Math.round((filledCount / totalQuestions) * 100);
+
+  const getStageTuple = getStageInfo(avg);
+  const stage = getStageTuple.stage;
+  const signal = getStageTuple.signal;
 
   const reset = () => {
     setAnswers({});
-    setShowGate(False);
+    setShowGate(false);
   };
 
   return (
@@ -593,22 +597,6 @@ export default function FutureReadinessAssessment() {
               </CardContent>
             </Card>
           </div>
-          {/* Persistent bottom wizard controls (always visible) */}
-          <div id="wizard-controls" className="hidden">
-            <div className="mx-auto max-w-5xl px-4">
-              <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 backdrop-blur p-3 shadow">
-                <button onClick={goBack} disabled={currentBlock === 0} className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 disabled:opacity-50">Back</button>
-                <div className="text-sm text-slate-700">Block {currentBlock + 1} of {DOMAINS.length}</div>
-                <button
-                  onClick={() => (currentBlock === DOMAINS.length - 1 ? setShowGate(true) : goNext())}
-                  disabled={!isCurrentBlockComplete}
-                  className="px-4 py-2 rounded-xl bg-[var(--brand)] text-white disabled:opacity-60"
-                >
-                  {currentBlock === DOMAINS.length - 1 ? 'Done' : 'Next'}
-                </button>
-              </div>
-            </div>
-          </div>
         </section>
 
         {/* Progress */}
@@ -617,7 +605,7 @@ export default function FutureReadinessAssessment() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-white">Completion</span>
-            <span className="text-sm text-white/90">{filledCount}/{DOMAINS.length * 3}</span>
+            <span className="text-sm text-white/90">{totalQuestions ? filledCount : 0}/{totalQuestions}</span>
           </div>
           <Progress value={progress} className="bg-white/20 [&>div]:bg-white" />
         </div>
@@ -629,7 +617,7 @@ export default function FutureReadinessAssessment() {
             {(() => {
               const i = currentBlock;
               const domain = DOMAINS[i];
-              const questions = QUESTIONS[domain];
+              const questions = (QUESTIONS as any)[domain] as any[];
               return (
                 <div key={domain} className="shadow-sm rounded-2xl bg-white/90 text-slate-900 border border-slate-200">
                   <div className="p-5 sm:p-6 space-y-4">
@@ -643,22 +631,22 @@ export default function FutureReadinessAssessment() {
 
                     {questions.map((q, j) => {
                       const isObj = typeof q === 'object' && q !== null;
-                      const optionLabels = (isObj && OPTION_OVERRIDES[q.title]) ? OPTION_OVERRIDES[q.title] : (isObj and q.options ? q.options : LEVEL_LABELS);
-                      const optionsList = optionLabels.map((label, idx) => ({ label, value: idx + 1 }));
+                      const optionLabels = (isObj && (OPTION_OVERRIDES as any)[q.title]) ? (OPTION_OVERRIDES as any)[q.title] : (isObj && q.options ? q.options : LEVEL_LABELS);
+                      const optionsList = optionLabels.map((label: string, idx: number) => ({ label, value: idx + 1 }));
                       return (
                         <div key={`${i}-${j}`} className="border rounded-xl p-4 bg-white">
                           <p className="text-sm mb-2">
-                            {isObj ? (<span className="font-semibold">{q.title}:</span>) : null} {isObj ? q.question : q}
+                            {isObj ? (<span className="font-semibold">{(q as any).title}:</span>) : null} {isObj ? (q as any).question : q}
                           </p>
                           <div className="flex flex-col gap-2">
-                            {optionsList.map((opt) => {
-                              const active = answers[`${i}-${j}`] === opt.value;
+                            {optionsList.map((opt: any) => {
+                              const active = (answers as any)[`${i}-${j}`] === opt.value;
                               return (
                                 <button title={opt.label}
                                   key={opt.value}
                                   onClick={() => setAnswers((prev) => ({ ...prev, [`${i}-${j}`]: opt.value }))}
                                   className={[
-                                    'px-3 py-2 rounded-lg border text-sm transition text-left w-full hover:bg-slate-50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 leading-snug line-clamp-2',
+                                    'group px-3 py-2 rounded-lg border text-sm transition text-left w-full hover:bg-slate-50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 leading-snug line-clamp-2',
                                     active ? 'border-yellow-400 ring-2 ring-yellow-300/70 bg-yellow-50' : 'border-slate-200 hover:border-slate-300',
                                   ].join(' ')}
                                 >
@@ -671,19 +659,31 @@ export default function FutureReadinessAssessment() {
                       );
                     })}
 
-                    {/* Spacer where inline controls used to be */}
+                    {/* Controls */}
                     <div className="mt-4 flex items-center justify-between">
                       <button
-                        onClick={goBack}
+                        onClick={() => {
+                          if (currentBlock > 0) {
+                            setCurrentBlock((i) => i - 1);
+                            document.getElementById('assessment-start')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }}
                         disabled={currentBlock === 0}
                         className="text-slate-600 hover:underline disabled:opacity-50 disabled:hover:no-underline"
                       >
                         Back
                       </button>
                       <Button
-                        onClick={() => (currentBlock === DOMAINS.length - 1 ? setShowGate(true) : goNext())}
+                        onClick={() => {
+                          if (currentBlock < DOMAINS.length - 1 && isCurrentBlockComplete) {
+                            setCurrentBlock((i) => i + 1);
+                            document.getElementById('assessment-start')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          } else if (currentBlock === DOMAINS.length - 1 && isCurrentBlockComplete) {
+                            setShowGate(true);
+                          }
+                        }}
                         disabled={!isCurrentBlockComplete}
-                        className={`px-4 py-2 rounded-xl border transition ${isCurrentBlockComplete ? 'bg-green-600 text-white border-transparent hover:bg-green-700' : 'bg-slate-200 text-slate-700 border-slate-300'}` }
+                        className={`px-4 py-2 rounded-xl border transition ${isCurrentBlockComplete ? 'bg-green-600 text-white border-transparent hover:bg-green-700' : 'bg-slate-200 text-slate-700 border-slate-300'}`}
                       >
                         {currentBlock === DOMAINS.length - 1 ? 'Done' : 'Next'}
                       </Button>
@@ -735,7 +735,7 @@ export default function FutureReadinessAssessment() {
 
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {data.map((d) => (
-                    <div key={d.subject} className="rounded-xl border border-slate-200 p-3 bg-white">
+                    <div key={d.subject} className="rounded-2xl border border-slate-200 p-3 bg-white">
                       <div className="text-xs text-slate-500">{d.subject}</div>
                       <div className="text-sm font-medium text-blue-700">{d.A ? d.A.toFixed(2) : "—"}/5</div>
                     </div>
@@ -751,17 +751,17 @@ export default function FutureReadinessAssessment() {
               </CardContent>
             </Card>
 
-            {showGate and (
-              <Card className="rounded-2xl shadow-sm border-yellow-300 bg白/95">
+            {showGate && (
+              <Card className="rounded-2xl shadow-sm border-yellow-300 bg-white/95">
                 <CardContent className="p-4 sm:p-6">
                   <h3 className="text-base sm:text-lg font-semibold text-blue-700">Request your tailored playbook</h3>
                   <p className="text-sm text-slate-600 mt-1">Replace with your marketing form integration.</p>
                   <form className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input className="rounded-xl border border-slate-300 px-3 py-2" placeholder="First name" />
-                    <input className="rounded-xl border border-slate-300 px-3 py-2" placeholder="Last name" />
-                    <input className="rounded-xl border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Work email" />
-                    <input className="rounded-xl border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Company" />
-                    <textarea className="rounded-xl border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Any specific areas to improve?" />
+                    <input className="rounded-2xl border border-slate-300 px-3 py-2" placeholder="First name" />
+                    <input className="rounded-2xl border border-slate-300 px-3 py-2" placeholder="Last name" />
+                    <input className="rounded-2xl border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Work email" />
+                    <input className="rounded-2xl border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Company" />
+                    <textarea className="rounded-2xl border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Any specific areas to improve?" />
                     <Button type="button" className="sm:col-span-2 bg-gradient-to-r from-pink-600 to-yellow-400 text-white hover:opacity-90">
                       Send my tailored playbook
                     </Button>
