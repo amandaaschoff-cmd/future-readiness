@@ -1,4 +1,4 @@
-# Future-Readiness Assessment (clean)
+# Future-Readiness Assessment (typed build)
 
 Run locally:
 
