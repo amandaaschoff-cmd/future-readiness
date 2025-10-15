@@ -477,8 +477,6 @@ export default function FutureReadinessAssessment() {
     });
   }, [answers, currentBlock]);
 
-  const totalBlocks = DOMAINS.length;
-
   const goNext = () => {
     if (currentBlock < totalBlocks - 1 && isCurrentBlockComplete) {
       setCurrentBlock((i) => i + 1);
