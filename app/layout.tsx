@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Future Readiness App",
-  description: "Next.js + Tailwind starter with an Assessment component",
+  description: "Next.js + Tailwind starter with Assessment component (TypeScript)",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

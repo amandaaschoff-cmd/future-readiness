@@ -13,7 +13,7 @@ export default function Page() {
               Future Readiness Assessment
             </h1>
             <p className="mt-4 text-lg text-white/90">
-              A minimal Next.js + Tailwind app with an example Assessment component and proper CSS wiring for Vercel.
+              TypeScript-ready Next.js + Tailwind app with an example Assessment component and proper CSS wiring for Vercel.
             </p>
             <div className="mt-8 flex gap-3">
               <Link href="/assessment" className="rounded-xl bg-white px-5 py-3 font-semibold text-ink shadow">
@@ -31,7 +31,7 @@ export default function Page() {
       <section className="mx-auto max-w-6xl px-6 py-16">
         <h2 className="text-2xl font-bold">What’s inside</h2>
         <p className="mt-2 text-slate-600">
-          This starter includes Tailwind, layout wiring, and an example component to prove styles deploy correctly.
+          This starter includes Tailwind, layout wiring, TS config, and an example component to prove styles deploy correctly.
         </p>
         <ul className="mt-6 grid gap-4 md:grid-cols-3">
           <li className="rounded-2xl border bg-white p-5 shadow-sm">
@@ -39,8 +39,8 @@ export default function Page() {
             <p className="text-sm text-slate-600">`globals.css` imported in `app/layout.tsx`.</p>
           </li>
           <li className="rounded-2xl border bg-white p-5 shadow-sm">
-            <h3 className="font-semibold">Globs configured</h3>
-            <p className="text-sm text-slate-600">`tailwind.config.js` covers `app/` and `components/`.</p>
+            <h3 className="font-semibold">Globs + alias configured</h3>
+            <p className="text-sm text-slate-600">`tailwind.config.js` covers folders, `@/*` alias works.</p>
           </li>
           <li className="rounded-2xl border bg-white p-5 shadow-sm">
             <h3 className="font-semibold">Assessment example</h3>

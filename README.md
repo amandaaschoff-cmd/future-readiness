@@ -1,31 +1,16 @@
-# Future Readiness App (Next.js + Tailwind)
+# Future Readiness App (Next.js + Tailwind, TS ready)
 
-A minimal Next.js (App Router) project with Tailwind preconfigured and an example `Assessment` component.
-Deploy-ready for Vercel.
+Fully configured for TypeScript on Vercel:
+- `typescript`, `@types/react`, `@types/node` installed
+- `next-env.d.ts` included
+- Path alias `@/*` enabled
 
-## Quick Start
+## Deploy
+1) Push to GitHub
+2) Import repo in Vercel → Deploy
 
+## Local
 ```bash
 npm install
 npm run dev
 ```
-
-Visit http://localhost:3000
-
-## Deploy to Vercel
-1. Push this folder to a GitHub repository.
-2. In Vercel, **New Project → Import Git Repository**.
-3. Use defaults (Build Command: `next build`, Output: `.next`).
-4. Deploy.
-
-## Where the styles are
-
-- Global Tailwind directives: `app/globals.css`
-- Imported in: `app/layout.tsx`
-- Tailwind is configured in `tailwind.config.js` with globs that include `app/` and `components/`
-
-## Customization
-
-- Put static assets in `/public`
-- Add new pages in `app/your-page/page.tsx`
-- Reuse the `Assessment` component or build your own

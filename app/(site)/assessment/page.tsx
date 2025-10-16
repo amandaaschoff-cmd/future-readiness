@@ -6,7 +6,7 @@ export default function AssessmentPage() {
       <h1 className="text-3xl font-bold">Assessment</h1>
       <p className="mt-2 text-slate-600">
         This page renders the sample Assessment component. If you see styled cards and a chart placeholder,
-        Tailwind is working in production.
+        Tailwind + TS are working in production.
       </p>
       <div className="mt-8">
         <Assessment />
